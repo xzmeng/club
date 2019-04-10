@@ -8,7 +8,7 @@ from .forms import ApplyForm, ClubCreateForm, AttendForm, ClubEditForm
 
 from .. import db
 from ..models import User, Club, Activity, ApplicationStatus, JoinApplication, \
-    CreateApplication, Attend, AttendStatus
+    CreateApplication, Attend, AttendStatus, ActivityStatus, Post
 
 
 @club.route('/clubs')
@@ -31,15 +31,41 @@ def clubs():
                            pagination=pagination)
 
 
-@club.route('/club/<int:club_id>')
-def club_detail(club_id):
+@club.route('/club/<int:club_id>/<string:category>')
+def club_detail(club_id, category):
+    choices = ['ongoing', 'finished', 'reviewing', 'rejected']
+    if category not in choices:
+        abort(404)
+
     club = Club.query.get_or_404(club_id)
     management = False
     if club.chief == current_user:
         management = True
+        if category == 'reviewing':
+            activities = Activity.query.filter_by(club_id=club_id). \
+                filter_by(status=ActivityStatus.reviewing)
+        elif category == 'rejected':
+            activities = Activity.query.filter_by(club_id=club_id). \
+                filter_by(status=ActivityStatus.rejected)
+    if category == 'ongoing':
+        activities = Activity.query.filter_by(club_id=club_id). \
+            filter_by(status=ActivityStatus.accepted)
+    elif category == 'finished':
+        activities = Activity.query.filter_by(club_id=club_id). \
+            filter_by(status=ActivityStatus.finished)
+    page = request.args.get('page', 1, type=int)
+    query = Post.query
+    pagination = query.order_by(Post.timestamp.desc()).paginate(
+        page, per_page=current_app.config['FLASKY_POSTS_PER_PAGE'],
+        error_out=False)
+    posts = pagination.items
     return render_template('club/club_detail.html',
                            club=club,
-                           management=management)
+                           management=management,
+                           activities=activities,
+                           category=category,
+                           posts=posts,
+                           pagination=pagination)
 
 
 @club.route('/club_edit/<int:club_id>', methods=['POST', 'GET'])
@@ -50,15 +76,17 @@ def club_edit(club_id):
     if form.validate_on_submit():
         name = form.name.data
         c = Club.query.filter_by(name=name).first()
-        if c:
+        if c != club and c:
             flash('社团名：{} 已经存在！'.format(name))
-            return redirect(url_for('.club_edit', club_id=club_id))
+            return redirect(url_for('.club_edit', club_id=club_id,
+                                    category='ongoing'))
         club.name = name
         club.description = form.description.data
         db.session.add(club)
         db.session.commit()
         flash('社团信息修改成功！')
-        return redirect(url_for('.club_detail', club_id=club_id))
+        return redirect(url_for('.club_detail', club_id=club_id,
+                                category='ongoing'))
 
     return render_template('club/club_edit.html',
                            form=form)
@@ -73,12 +101,12 @@ def apply(club_id):
         return redirect(url_for('.clubs'))
     if current_user.has_joined(club):
         flash('您已经是该社团的成员！')
-        return redirect(url_for('.club_detail', club_id=club_id))
+        return redirect(url_for('.club_detail', club_id=club_id, category='ongoing'))
     application = club.join_applications.filter_by(user_id=current_user.id,
                                                    status=ApplicationStatus.reviewing).first()
     if application:
         flash('您的申请正在审核中,请耐心等待！')
-        return redirect(url_for('.club_detail', club_id=club_id))
+        return redirect(url_for('.club_detail', club_id=club_id, category='ongoing'))
 
     form = ApplyForm()
     if form.validate_on_submit():
@@ -210,14 +238,17 @@ def activities(category):
         abort(404)
     if category == 'ongoing':
         club_ids = [club.id for club in current_user.clubs]
-        query = Activity.query.filter(Activity.club_id.in_(club_ids)).filter_by(ongoing=True)
+        query = Activity.query.filter(Activity.club_id.in_(club_ids)). \
+            filter_by(status=ActivityStatus.accepted)
     elif category == 'attended':
         query = Activity.query.join(Attend).filter(Attend.user == current_user). \
             filter(Activity.id == Attend.activity_id). \
+            filter(Activity.status != ActivityStatus.rejected). \
             filter(Attend.status == AttendStatus.accepted)
     elif category == 'reviewing':
         query = Activity.query.join(Attend).filter(Attend.user == current_user). \
             filter(Activity.id == Attend.activity_id). \
+            filter(Activity.status == ActivityStatus.accepted). \
             filter(Attend.status == AttendStatus.reviewing)
     elif category == 'rejected':
         query = Activity.query.join(Attend).filter(Attend.user == current_user). \
@@ -242,9 +273,62 @@ def activity_detail(activity_id):
     activity = Activity.query.get_or_404(activity_id)
     attend = Attend.query.filter_by(activity_id=activity.id,
                                     user_id=current_user.id).first()
+    status_dict = {
+        ActivityStatus.reviewing: 'reviewing',
+        ActivityStatus.accepted: 'ongoing',
+        ActivityStatus.rejected: 'rejected',
+        ActivityStatus.finished: 'finished',
+    }
+    status = status_dict[activity.status]
+
+    management = False
+    if current_user == activity.club.chief:
+        management = True
     return render_template('club/activity_detail.html',
                            activity=activity,
-                           attend=attend)
+                           attend=attend,
+                           status=status,
+                           management=management)
+
+
+@club.route('/activity_management/<int:activity_id>/<string:category>')
+def activity_management(activity_id, category):
+    activity = Activity.query.get_or_404(activity_id)
+    if category == 'reviewing':
+        attends = Attend.query.filter_by(activity=activity). \
+            filter_by(status=AttendStatus.reviewing)
+    elif category == 'reviewed':
+        attends = Attend.query.filter_by(activity=activity). \
+            filter(Attend.status != AttendStatus.reviewing)
+    return render_template('club/activity_management.html',
+                           activity=activity,
+                           attends=attends,
+                           category=category
+                           )
+
+
+@club.route('/handle_attend/<int:attend_id>/<string:category>')
+def handle_attend(attend_id, category):
+    attend = Attend.query.get_or_404(attend_id)
+    if current_user != attend.activity.club.chief:
+        abort(403)
+    if category == 'accept':
+        attend.status = AttendStatus.accepted
+        db.session.add(attend)
+        db.session.commit()
+        flash('操作成功!')
+        return redirect(url_for('.activity_management',
+                                activity_id=attend.activity_id,
+                                category='reviewing'))
+    elif category == 'reject':
+        attend.status = AttendStatus.rejected
+        db.session.add(attend)
+        db.session.commit()
+        flash('操作成功!')
+        return redirect(url_for('.activity_management',
+                                activity_id=attend.activity_id,
+                                category='reviewing'))
+    abort(404)
 
 
 @club.route('/all_clubs')
@@ -261,3 +345,7 @@ def show_my_clubs():
     resp = make_response(redirect(url_for('.clubs')))
     resp.set_cookie('show_all_clubs', '', max_age=30 * 24 * 60 * 60)
     return resp
+
+@club.route('/about')
+def about():
+    return render_template('club/about.html')

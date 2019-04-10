@@ -5,7 +5,7 @@
 {% block title %}申请{% endblock %}
 
 {% block page_content %}
-  <a href="{{ url_for('.club_detail', club_id=club_id) }}">返回社团页面</a>
+  <a href="{{ url_for('.club_detail', club_id=club_id, category='ongoing') }}">返回社团页面</a>
   <h1>申请列表</h1>
   <div class="post-tabs">
     <ul class="nav nav-tabs">

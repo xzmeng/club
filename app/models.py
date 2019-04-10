@@ -347,7 +347,7 @@ class Club(db.Model):
     vice = db.relationship('User', foreign_keys=[vice_id])
 
     def get_absolute_url(self):
-        return url_for('club.club_detail', club_id=self.id)
+        return url_for('club.club_detail', club_id=self.id, category='ongoing')
 
 
 class ApplicationStatus(enum.Enum):
@@ -406,8 +406,9 @@ class AttendStatus(enum.Enum):
 
 class Attend(db.Model):
     __tablename__ = 'attends'
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
-    activity_id = db.Column(db.Integer, db.ForeignKey('activities.id'), primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    activity_id = db.Column(db.Integer, db.ForeignKey('activities.id'))
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
     status = db.Column(Enum(AttendStatus),
@@ -425,12 +426,21 @@ class Attend(db.Model):
         return status_text.get(self.status)
 
 
+class ActivityStatus(enum.Enum):
+    reviewing = 1
+    accepted = 2
+    rejected = 3
+    finished = 4
+
+
 class Activity(db.Model):
     __tablename__ = 'activities'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), index=True)
     description = db.Column(db.Text())
-    ongoing = db.Column(db.Boolean, default=True)
+
+    status = db.Column(db.Enum(ActivityStatus),
+                       default=ActivityStatus.reviewing)
 
     club_id = db.Column(db.Integer, db.ForeignKey('clubs.id'))
     club = db.relationship('Club', backref=db.backref('activities', lazy='dynamic'))

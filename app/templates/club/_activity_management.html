@@ -1,0 +1,20 @@
+<ul class="attends">
+  {% for attend in attends %}
+    <p>申请人:{{ attend.user.name }}</p>
+    <p>申请时间:{{ attend.timestamp }}</p>
+    <p>申请描述:{{ attend.description }}</p>
+    <p>申请状态:{{ attend.get_status_text() }}</p>
+
+    {% if category == 'reviewing' %}
+    <a href="{{ url_for('.handle_attend',
+              category='accept',
+              attend_id=attend.id) }}"
+       class="btn btn-success">接受申请</a>
+    <a href="{{ url_for('.handle_attend',
+              category='reject',
+              attend_id=attend.id) }}"
+       class="btn btn-danger">拒绝申请</a>
+    {% endif %}
+    <p></p>
+  {% endfor %}
+</ul>

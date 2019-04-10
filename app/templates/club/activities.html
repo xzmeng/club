@@ -18,7 +18,7 @@
       <li{% if category == 'reviewing' %} class="active"{% endif %}>
         <a href="{{ url_for('.activities', category='reviewing') }}">待审核</a>
       </li>
-    <li{% if category == 'rejected' %} class="active"{% endif %}>
+      <li{% if category == 'rejected' %} class="active"{% endif %}>
         <a href="{{ url_for('.activities', category='rejected') }}">已拒绝</a>
       </li>
       <li{% if category == 'all' %} class="active"{% endif %}>

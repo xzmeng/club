@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: 6448a402c3d7
+Revision ID: a79e71165628
 Revises: 
-Create Date: 2019-04-10 20:19:58.677578
+Create Date: 2019-04-10 22:54:55.026564
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '6448a402c3d7'
+revision = 'a79e71165628'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -88,7 +88,7 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(length=64), nullable=True),
     sa.Column('description', sa.Text(), nullable=True),
-    sa.Column('ongoing', sa.Boolean(), nullable=True),
+    sa.Column('status', sa.Enum('reviewing', 'accepted', 'rejected', 'finished', name='activitystatus'), nullable=True),
     sa.Column('club_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['club_id'], ['clubs.id'], ),
     sa.PrimaryKeyConstraint('id')
@@ -127,13 +127,14 @@ def upgrade():
     sa.PrimaryKeyConstraint('club_id', 'user_id')
     )
     op.create_table('attends',
-    sa.Column('user_id', sa.Integer(), nullable=False),
-    sa.Column('activity_id', sa.Integer(), nullable=False),
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('user_id', sa.Integer(), nullable=True),
+    sa.Column('activity_id', sa.Integer(), nullable=True),
     sa.Column('timestamp', sa.DateTime(), nullable=True),
     sa.Column('status', sa.Enum('reviewing', 'accepted', 'rejected', name='attendstatus'), nullable=True),
     sa.ForeignKeyConstraint(['activity_id'], ['activities.id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
-    sa.PrimaryKeyConstraint('user_id', 'activity_id')
+    sa.PrimaryKeyConstraint('id')
     )
     # ### end Alembic commands ###
 

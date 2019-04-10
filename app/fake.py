@@ -3,7 +3,7 @@ from random import randint
 from sqlalchemy.exc import IntegrityError
 from faker import Faker
 from . import db
-from .models import User, Role, Post, Club, Activity, Attend, JoinApplication
+from .models import User, Role, Post, Club, Activity, Attend, JoinApplication, ActivityStatus
 
 
 def users(count=20):
@@ -110,7 +110,12 @@ def activities(count=10):
             activity = Activity(name=fake.name(),
                                 description=fake.text(),
                                 club=c,
-                                ongoing=random.choice([True, False]))
+                                status=random.choice([
+                                    ActivityStatus.accepted,
+                                    ActivityStatus.rejected,
+                                    ActivityStatus.finished,
+                                    ActivityStatus.reviewing
+                                ]))
             db.session.add(activity)
     db.session.commit()
 

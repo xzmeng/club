@@ -24,5 +24,35 @@
   <h2>社团简介</h2>
   <p>{{ club.description }}</p>
 
+  <h2>社团活动</h2>
+  <div class="post-tabs">
+    <ul class="nav nav-tabs">
+      <li{% if category == 'ongoing' %} class="active"{% endif %}>
+        <a href="{{ url_for('.club_detail', club_id=club.id, category='ongoing') }}">正在进行</a>
+      </li>
+      <li{% if category == 'finished' %} class="active"{% endif %}>
+        <a href="{{ url_for('.club_detail', club_id=club.id, category='finished') }}">已结束</a>
+      </li>
+      {% if management %}
+        <li{% if category == 'reviewing' %} class="active"{% endif %}>
+          <a href="{{ url_for('.club_detail', club_id=club.id, category='reviewing') }}">正在审核</a>
+        </li>
+        <li{% if category == 'rejected' %} class="active"{% endif %}>
+          <a href="{{ url_for('.club_detail', club_id=club.id, category='rejected') }}">审核未通过</a>
+        </li>
+      {% endif %}
+    </ul>
+    {% include 'club/_activities.html' %}
+
+
+    <h1>社团留言</h1>
+    {% include '_posts.html' %}
+    {% if pagination %}
+      <div class="pagination">
+        {{ macros.pagination_widget(pagination, '.club_detail', club_id=club.id, category='ongoing') }}
+      </div>
+    {% endif %}
+  </div>
+
 
 {% endblock %}

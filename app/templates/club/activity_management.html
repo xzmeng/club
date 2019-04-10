@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+{% import "_macros.html" as macros %}
+
+{% block title %}申请{% endblock %}
+
+{% block page_content %}
+  <a href="{{ url_for('.activity_detail', activity_id=activity.id) }}">返回活动页面</a>
+  <h1>申请列表</h1>
+  <div class="post-tabs">
+    <ul class="nav nav-tabs">
+      <li{% if category == 'reviewing' %} class="active"{% endif %}>
+        <a href="{{ url_for('.activity_management', activity_id=activity.id, category='reviewing') }}">等待审核</a>
+      </li>
+      <li{% if category == 'reviewed' %} class="active"{% endif %}>
+        <a href="{{ url_for('.activity_management', activity_id=activity.id, category='reviewed') }}">已经审核</a>
+        </li>
+    </ul>
+    {% include 'club/_activity_management.html' %}
+    {% if pagination %}
+      <div class="pagination">
+        {{ macros.pagination_widget(pagination, '.activity_management', category=category,
+                activity_id=activity.id) }}
+      </div>
+    {% endif %}
+  </div>
+
+{% endblock %}

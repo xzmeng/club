@@ -7,11 +7,23 @@
 {% block page_content %}
   <h1>{{ activity.club.name }}:{{ activity.name }}</h1>
 
-  {% if not attend %}
-    <a href="{{ url_for('.apply_to_attend', activity_id=activity.id) }}" class="btn btn-primary">申请参加</a>
-  {% else %}
-    <a href="#" class="btn btn-default">已经参加</a>
-    <a href="#" class="btn btn-default">{{ attend.get_status_text() }}</a>
+  {% if status == 'ongoing' %}
+    {% if not attend %}
+      <a href="{{ url_for('.apply_to_attend', activity_id=activity.id) }}" class="btn btn-primary">申请参加</a>
+    {% else %}
+      <a href="#" class="btn btn-default">已经参加</a>
+      <a href="#" class="btn btn-default">{{ attend.get_status_text() }}</a>
+    {% endif %}
+  {% elif status == 'rejected' %}
+    <a href="#" class="btn btn-danger">审核未通过</a>
+  {% elif status == 'finished' %}
+    <a href="#" class="btn btn-default">已经结束</a>
+  {% elif status == 'reviewing' %}
+    <a href="#" class="btn btn-default">正在审核</a>
+  {% endif %}
+
+  {% if management %}
+    <a href="{{ url_for('.activity_management', activity_id=activity.id, category='reviewing') }}" class="btn btn-primary">参加名单</a>
   {% endif %}
 
   <h2>活动简介</h2>
