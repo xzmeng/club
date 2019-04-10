@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+{% import "_macros.html" as macros %}
+
+{% block title %}社团详情{% endblock %}
+
+{% block page_content %}
+  <h1>{{ club.name }}</h1>
+  {% if management %}
+    <a href="#" class="btn btn-default">管理员</a>
+    <a href="{{ url_for('.club_edit', club_id=club.id) }}" class="btn btn-primary">社团信息</a>
+    <a href="{{ url_for('.join_management', club_id=club.id, category='reviewing') }}"
+       class="btn btn-primary">招新管理</a>
+    <a href="" class="btn btn-primary">活动发布</a>
+    <a href="" class="btn btn-primary">公告发布</a>
+  {% else %}
+    {% if not current_user.has_joined(club) %}
+      <a href="{{ url_for('.apply', club_id=club.id) }}" class="btn btn-primary">申请加入</a>
+    {% else %}
+      <a href="#" class="btn btn-default">已经加入</a>
+    {% endif %}
+  {% endif %}
+
+  <h2>社团简介</h2>
+  <p>{{ club.description }}</p>
+
+
+{% endblock %}

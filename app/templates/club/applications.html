@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+{% import "_macros.html" as macros %}
+
+{% block title %}申请{% endblock %}
+
+{% block page_content %}
+  <h1>申请列表</h1>
+  <div class="post-tabs">
+    <ul class="nav nav-tabs">
+      <li{% if category == 'join' %} class="active"{% endif %}>
+        <a href="{{ url_for('.applications', category='join') }}">加入申请</a>
+      </li>
+      <li{% if category == 'create' %} class="active"{% endif %}>
+        <a href="{{ url_for('.applications', category='create') }}">创建申请</a>
+        </li>
+    </ul>
+    {% include 'club/_applications.html' %}
+    {% if pagination %}
+      <div class="pagination">
+        {{ macros.pagination_widget(pagination, '.applications', category=category) }}
+      </div>
+    {% endif %}
+  </div>
+
+{% endblock %}

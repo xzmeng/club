@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+{% import "_macros.html" as macros %}
+
+{% block title %}活动详情{% endblock %}
+
+{% block page_content %}
+  <h1>{{ activity.club.name }}:{{ activity.name }}</h1>
+
+  {% if not attend %}
+    <a href="{{ url_for('.apply_to_attend', activity_id=activity.id) }}" class="btn btn-primary">申请参加</a>
+  {% else %}
+    <a href="#" class="btn btn-default">已经参加</a>
+    <a href="#" class="btn btn-default">{{ attend.get_status_text() }}</a>
+  {% endif %}
+
+  <h2>活动简介</h2>
+  <p>{{ activity.description }}</p>
+
+
+{% endblock %}

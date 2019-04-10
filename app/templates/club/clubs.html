@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+{% import "_macros.html" as macros %}
+
+{% block title %}社团{% endblock %}
+
+{% block page_content %}
+  <h1>社团列表</h1>
+  <a href="{{ url_for('.apply_to_create') }}" class="btn btn-primary">创建新社团</a>
+  <a href="{{ url_for('.applications', category='join') }}" class="btn btn-default">我的申请</a>
+  <div class="post-tabs">
+    <ul class="nav nav-tabs">
+      <li{% if not show_all_clubs %} class="active"{% endif %}><a href="{{ url_for('.show_my_clubs') }}">我的社团</a></li>
+      <li{% if show_all_clubs %} class="active"{% endif %}><a href="{{ url_for('.show_all_clubs') }}">所有社团</a></li>
+    </ul>
+    {% include 'club/_clubs.html' %}
+    {% if pagination %}
+      <div class="pagination">
+        {{ macros.pagination_widget(pagination, '.clubs') }}
+      </div>
+    {% endif %}
+  </div>
+
+{% endblock %}

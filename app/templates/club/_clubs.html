@@ -1,0 +1,5 @@
+<ul class="clubs">
+  {% for club in clubs %}
+    <p><a href="{{ club.get_absolute_url() }}">{{ club.name }}</a></p>
+  {% endfor %}
+</ul>

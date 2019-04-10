@@ -1,0 +1,11 @@
+<ul class="clubs">
+  {% for application in applications %}
+    {% if category == 'create' %}
+    <p>{{ application.club_name }}</p>
+    {% else %}
+    <p>{{ application.club.name }}</p>
+    {% endif %}
+    <p>状态:{{ application.get_status_text() }}</p>
+    <p>申请时间:{{ application.timestamp }}</p>
+  {% endfor %}
+</ul>

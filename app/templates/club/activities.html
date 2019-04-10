@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+{% import "_macros.html" as macros %}
+
+{% block title %}活动{% endblock %}
+
+{% block page_content %}
+  <h1>活动列表</h1>
+
+  <div class="post-tabs">
+    <ul class="nav nav-tabs">
+      <li{% if category == 'ongoing' %} class="active"{% endif %}>
+        <a href="{{ url_for('.activities', category='ongoing') }}">正在进行</a>
+      </li>
+      <li{% if category == 'attended' %} class="active"{% endif %}>
+        <a href="{{ url_for('.activities', category='attended') }}">我参加的</a>
+      </li>
+      <li{% if category == 'reviewing' %} class="active"{% endif %}>
+        <a href="{{ url_for('.activities', category='reviewing') }}">待审核</a>
+      </li>
+    <li{% if category == 'rejected' %} class="active"{% endif %}>
+        <a href="{{ url_for('.activities', category='rejected') }}">已拒绝</a>
+      </li>
+      <li{% if category == 'all' %} class="active"{% endif %}>
+        <a href="{{ url_for('.activities', category='all') }}">所有活动</a>
+      </li>
+    </ul>
+    {% include 'club/_activities.html' %}
+    {% if pagination %}
+      <div class="pagination">
+        {{ macros.pagination_widget(pagination, '.activities', category=category) }}
+      </div>
+    {% endif %}
+  </div>
+
+{% endblock %}

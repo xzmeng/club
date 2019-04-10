@@ -1,0 +1,20 @@
+<ul class="applications">
+  {% for application in applications %}
+    <p>申请人:{{ application.user.name }}</p>
+    <p>申请时间:{{ application.timestamp }}</p>
+    <p>申请描述:{{ application.description }}</p>
+    <p>申请状态:{{ application.get_status_text() }}</p>
+
+    {% if category == 'reviewing' %}
+    <a href="{{ url_for('.handle_application',
+              category='accept', club_id=club_id,
+              application_id=application.id) }}"
+       class="btn btn-success">接受申请</a>
+    <a href="{{ url_for('.handle_application',
+              category='reject', club_id=club_id,
+              application_id=application.id) }}"
+       class="btn btn-danger">拒绝申请</a>
+    {% endif %}
+    <p></p>
+  {% endfor %}
+</ul>
