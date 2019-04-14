@@ -5,24 +5,39 @@
 {% block title %}申请{% endblock %}
 
 {% block page_content %}
-  <a href="{{ url_for('.activity_detail', activity_id=activity.id) }}">返回活动页面</a>
-  <h1>申请列表</h1>
-  <div class="post-tabs">
-    <ul class="nav nav-tabs">
-      <li{% if category == 'reviewing' %} class="active"{% endif %}>
-        <a href="{{ url_for('.activity_management', activity_id=activity.id, category='reviewing') }}">等待审核</a>
-      </li>
-      <li{% if category == 'reviewed' %} class="active"{% endif %}>
-        <a href="{{ url_for('.activity_management', activity_id=activity.id, category='reviewed') }}">已经审核</a>
-        </li>
-    </ul>
-    {% include 'club/_activity_management.html' %}
-    {% if pagination %}
-      <div class="pagination">
-        {{ macros.pagination_widget(pagination, '.activity_management', category=category,
-                activity_id=activity.id) }}
-      </div>
+    <a href="{{ url_for('.activity_detail', activity_id=activity.id) }}">返回活动页面</a>
+    <h1>申请列表</h1>
+    {% if not rollcall %}
+        <a href="{{ url_for('.start_rollcall', activity_id=activity.id) }}"
+           class="btn btn-primary">开始点名</a>
+    {% else %}
+        <a href=""
+           class="btn btn-default">已经开始点名</a>
     {% endif %}
-  </div>
+    <div class="post-tabs">
+        <ul class="nav nav-tabs">
+            <li{% if category == 'reviewing' %} class="active"{% endif %}>
+                <a href="{{ url_for('.activity_management', activity_id=activity.id, category='reviewing') }}">等待审核</a>
+            </li>
+            <li{% if category == 'reviewed' %} class="active"{% endif %}>
+                <a href="{{ url_for('.activity_management', activity_id=activity.id, category='reviewed') }}">已经审核</a>
+            </li>
+            {% if rollcall %}
+                <li{% if category == 'attended' %} class="active"{% endif %}>
+                    <a href="{{ url_for('.activity_management', activity_id=activity.id, category='attended') }}">点名已经答到</a>
+                </li>
+                <li{% if category == 'notattended' %} class="active"{% endif %}>
+                    <a href="{{ url_for('.activity_management', activity_id=activity.id, category='notattended') }}">点名未答到</a>
+                </li>
+            {% endif %}
+        </ul>
+        {% include 'club/_activity_management.html' %}
+        {% if pagination %}
+            <div class="pagination">
+                {{ macros.pagination_widget(pagination, '.activity_management', category=category,
+                activity_id=activity.id) }}
+            </div>
+        {% endif %}
+    </div>
 
 {% endblock %}

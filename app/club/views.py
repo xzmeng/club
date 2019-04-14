@@ -1,10 +1,11 @@
 from flask import render_template, redirect, url_for, abort, flash, request, \
     current_app, make_response
 from flask_login import login_required, current_user
+from sqlalchemy import or_, and_
 
 from app.decorators import club_manager_required
 from . import club
-from .forms import ApplyForm, ClubCreateForm, AttendForm, ClubEditForm
+from .forms import ApplyForm, ClubCreateForm, AttendForm, ClubEditForm, ActivityForm, FinishActivityForm
 
 from .. import db
 from ..models import User, Club, Activity, ApplicationStatus, JoinApplication, \
@@ -49,7 +50,7 @@ def club_detail(club_id, category):
                 filter_by(status=ActivityStatus.rejected)
     if category == 'ongoing':
         activities = Activity.query.filter_by(club_id=club_id). \
-            filter_by(status=ActivityStatus.accepted)
+            filter(or_(Activity.status == ActivityStatus.accepted, ActivityStatus == ActivityStatus.rollcall))
     elif category == 'finished':
         activities = Activity.query.filter_by(club_id=club_id). \
             filter_by(status=ActivityStatus.finished)
@@ -65,7 +66,8 @@ def club_detail(club_id, category):
                            activities=activities,
                            category=category,
                            posts=posts,
-                           pagination=pagination)
+                           pagination=pagination,
+                           )
 
 
 @club.route('/club_edit/<int:club_id>', methods=['POST', 'GET'])
@@ -273,11 +275,19 @@ def activity_detail(activity_id):
     activity = Activity.query.get_or_404(activity_id)
     attend = Attend.query.filter_by(activity_id=activity.id,
                                     user_id=current_user.id).first()
+    rollcall = None
+    if activity.status == ActivityStatus.rollcall:
+        if attend:
+            if attend.status == AttendStatus.attended:
+                rollcall = 'attended'
+            else:
+                rollcall = 'notattended'
     status_dict = {
         ActivityStatus.reviewing: 'reviewing',
         ActivityStatus.accepted: 'ongoing',
         ActivityStatus.rejected: 'rejected',
         ActivityStatus.finished: 'finished',
+        ActivityStatus.rollcall: 'rollcalling'
     }
     status = status_dict[activity.status]
 
@@ -288,7 +298,8 @@ def activity_detail(activity_id):
                            activity=activity,
                            attend=attend,
                            status=status,
-                           management=management)
+                           management=management,
+                           rollcall=rollcall)
 
 
 @club.route('/activity_management/<int:activity_id>/<string:category>')
@@ -300,11 +311,190 @@ def activity_management(activity_id, category):
     elif category == 'reviewed':
         attends = Attend.query.filter_by(activity=activity). \
             filter(Attend.status != AttendStatus.reviewing)
+    elif category == 'attended':
+        attends = Attend.query.filter_by(activity=activity). \
+            filter(Attend.status == AttendStatus.attended)
+    elif category == 'notattended':
+        attends = Attend.query.filter_by(activity=activity). \
+            filter(Attend.status == AttendStatus.accepted)
+    rollcall = activity.status == ActivityStatus.rollcall
     return render_template('club/activity_management.html',
                            activity=activity,
                            attends=attends,
-                           category=category
+                           category=category,
+                           rollcall=rollcall
                            )
+
+
+@club.route('/activity_management_admin/<string:category>')
+def activity_management_admin(category):
+    if category == 'reviewing':
+        activities = Activity.query.filter_by(status=ActivityStatus.reviewing)
+    elif category == 'reviewed':
+        activities = Activity.query.filter(Activity.status != ActivityStatus.reviewing)
+
+    page = request.args.get('page', 1, type=int)
+    pagination = activities.paginate(
+        page, per_page=current_app.config['FLASKY_POSTS_PER_PAGE'],
+        error_out=False
+    )
+    activities = pagination.items
+    return render_template('club/activity_management_admin.html',
+                           activities=activities,
+                           category=category,
+                           pagination=pagination
+                           )
+
+
+@club.route('/finish_activity/<int:activity_id>', methods=['POST', 'GET'])
+def finish_activity(activity_id):
+    activity = Activity.query.get_or_404(activity_id)
+    if current_user != activity.club.chief:
+        abort(403)
+    if activity.status != ActivityStatus.accepted:
+        flash('活动不再进行中！')
+        return redirect(url_for('.activity_detail', activity_id=activity_id))
+    form = FinishActivityForm()
+    if form.validate_on_submit():
+        activity.status = ActivityStatus.finished
+        activity.conclusion = form.description.data
+        db.session.add(activity)
+        db.session.commit()
+        flash('活动成功结束！')
+        return redirect(url_for('.activity_detail', activity_id=activity_id))
+    return render_template('club/finish.html',
+                           form=form)
+
+
+@club.route('/start_rollcall/<int:activity_id>')
+def start_rollcall(activity_id):
+    activity = Activity.query.get_or_404(activity_id)
+    if activity.status != ActivityStatus.accepted:
+        flash('活动不在进行中或者点名已经开始！')
+        return redirect(url_for('.activity_management',
+                                activity_id=activity_id,
+                                category='attended'))
+    activity.status = ActivityStatus.rollcall
+    db.session.add(activity)
+    db.session.commit()
+    flash('点名开始！')
+    return redirect(url_for('.activity_management',
+                            activity_id=activity_id,
+                            category='attended'))
+
+
+@club.route('/rollcall/<int:activity_id>')
+def rollcall(activity_id):
+    activity = Activity.query.get_or_404(activity_id)
+    if activity.status != ActivityStatus.rollcall:
+        flash('活动没有在点名阶段！')
+        return redirect(url_for('.activity_detail',
+                                activity_id=activity_id))
+    attend = Attend.query.filter_by(activity=activity, user=current_user).first()
+    if not attend:
+        flash('你没有参加该活动或者审核没有通过！')
+        return redirect(url_for('.activity_detail',
+                                activity_id=activity_id))
+    if attend.status == AttendStatus.attended:
+        flash('你已经答到过了！')
+        return redirect(url_for('.activity_detail',
+                                activity_id=activity_id))
+    attend.status = AttendStatus.attended
+    db.session.add(attend)
+    db.session.commit()
+    flash('成功答到！')
+    return redirect(url_for('.activity_detail',
+                            activity_id=activity_id))
+
+
+@club.route('/club_create_admin/<string:category>')
+@login_required
+def club_create_admin(category):
+    if category == 'reviewing':
+        applications = CreateApplication.query.filter_by(status=ApplicationStatus.reviewing)
+    elif category == 'reviewed':
+        applications = CreateApplication.query.filter(CreateApplication.status != ApplicationStatus.reviewing)
+
+    page = request.args.get('page', 1, type=int)
+    pagination = applications.paginate(
+        page, per_page=current_app.config['FLASKY_POSTS_PER_PAGE'],
+        error_out=False
+    )
+    applications = pagination.items
+    return render_template('club/application_management_admin.html',
+                           applications=applications,
+                           category=category,
+                           pagination=pagination
+                           )
+
+
+@club.route('/club_handle/<int:app_id>/<string:category>')
+def handle_club(app_id, category):
+    app = CreateApplication.query.get_or_404(app_id)
+    # if current_user != activity.activity.club.chief:
+    #     abort(403)
+    if category == 'accept':
+        app.status = ApplicationStatus.accepted
+        club = Club()
+        club.name = app.club_name
+        club.description = app.description
+        club.chief = app.user
+        club.members.append(app.user)
+        db.session.add(app)
+        db.session.add(club)
+        db.session.commit()
+        flash('操作成功!')
+        return redirect(url_for('.club_create_admin',
+                                category='reviewing'))
+    elif category == 'reject':
+        app.status = ApplicationStatus.rejected
+        db.session.add(app)
+        db.session.commit()
+        flash('操作成功!')
+        return redirect(url_for('.club_create_admin',
+                                category='reviewing'))
+    abort(404)
+
+
+@club.route('/activity_handle/<int:activity_id>/<string:category>')
+def handle_activity(activity_id, category):
+    activity = Activity.query.get_or_404(activity_id)
+    # if current_user != activity.activity.club.chief:
+    #     abort(403)
+    if category == 'accept':
+        activity.status = ActivityStatus.accepted
+        db.session.add(activity)
+        db.session.commit()
+        flash('操作成功!')
+        return redirect(url_for('.activity_management_admin',
+                                category='reviewing'))
+    elif category == 'reject':
+        activity.status = ActivityStatus.rejected
+        db.session.add(activity)
+        db.session.commit()
+        flash('操作成功!')
+        return redirect(url_for('.activity_management_admin',
+                                category='reviewing'))
+    abort(404)
+
+
+@club.route('/activity_publish/<int:club_id>', methods=['GET', 'POST'])
+def activity_publish(club_id):
+    club = Club.query.get_or_404(club_id)
+    if club.chief != current_user:
+        abort(403)
+    form = ActivityForm()
+    if form.validate_on_submit():
+        activity = Activity()
+        activity.name = form.name.data
+        activity.description = form.description.data
+        activity.club = club
+        db.session.add(activity)
+        db.session.commit()
+        flash('您的活动已经成功发布,请等待联合会审核！')
+        return redirect(url_for('.activity_detail', activity_id=activity.id))
+    return render_template('club/activity_publish.html',
+                           form=form)
 
 
 @club.route('/handle_attend/<int:attend_id>/<string:category>')
@@ -346,6 +536,75 @@ def show_my_clubs():
     resp.set_cookie('show_all_clubs', '', max_age=30 * 24 * 60 * 60)
     return resp
 
+
 @club.route('/about')
 def about():
     return render_template('club/about.html')
+
+
+@club.route('/admin')
+def admin():
+    return render_template('club/admin.html')
+
+
+@club.route('/statistics/student')
+@login_required
+def student_info():
+    info = {}
+    for club in current_user.clubs:
+        activity_ids = [activity.id for activity in club.activities]
+        info[club.name] = Attend.query. \
+            filter(Attend.user == current_user, Attend.activity_id.in_(activity_ids)).count()
+    bar_labels = info.keys()
+    bar_values = info.values()
+    return render_template('club/student_info.html',
+                           title='学生统计', max=10,
+                           labels=bar_labels,
+                           values=bar_values,
+                           info=info)
+
+
+@club.route('/statistics/club/<int:club_id>/<string:category>')
+@login_required
+def club_info(club_id, category):
+    club = Club.query.get_or_404(club_id)
+    activity_ids = [activity.id for activity in club.activities]
+    info = {}
+    if category == 'members':
+        title = '成员统计'
+        for member in club.members:
+            info[member.name] = Attend.query.filter(
+                and_(Attend.activity_id.in_(activity_ids),
+                     Attend.user == member)).count()
+    elif category == 'activities':
+        title = '活动统计'
+        for activity in club.activities:
+            info[activity.name] = Attend.query.filter(
+                Attend.activity == activity
+            ).count()
+
+    bar_labels = info.keys()
+    bar_values = info.values()
+    return render_template('club/club_info.html',
+                           title=title, max=10,
+                           labels=bar_labels,
+                           values=bar_values,
+                           info=info,
+                           club=club)
+
+@club.route('/statistics/admin')
+@login_required
+def admin_info():
+    info = {}
+    for club in Club.query.all():
+        activity_ids = [activity.id for activity in club.activities]
+        info[club.name] = Attend.query.filter(Attend.activity_id.in_(activity_ids)).count()
+
+    title = '社团活跃度'
+    bar_labels = info.keys()
+    bar_values = info.values()
+    return render_template('club/admin_info.html',
+                           title=title, max=max(bar_values),
+                           labels=bar_labels,
+                           values=bar_values,
+                           info=info)

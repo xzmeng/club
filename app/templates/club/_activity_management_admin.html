@@ -1,0 +1,23 @@
+<ul class="attends">
+    {% for activity in activities %}
+        <div style="border-top: solid 1px">
+
+
+        <p>活动名称:{{ activity.name }}</p>
+        <p>活动详情:{{ activity.description }}</p>
+        <p>活动状态:{{ activity.get_status_text() }}</p>
+
+        {% if category == 'reviewing' %}
+            <a href="{{ url_for('.handle_activity',
+              category='accept',
+              activity_id=activity.id) }}"
+               class="btn btn-success">接受申请</a>
+            <a href="{{ url_for('.handle_activity',
+              category='reject',
+              activity_id=activity.id) }}"
+               class="btn btn-danger">拒绝申请</a>
+        {% endif %}
+        <p></p>
+        </div>
+    {% endfor %}
+</ul>

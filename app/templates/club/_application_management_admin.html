@@ -1,0 +1,23 @@
+<ul class="attends">
+    {% for app in applications %}
+        <div style="border-top: solid 1px">
+
+
+        <p>社团名称:{{ app.club_name }}</p>
+        <p>社团详情:{{ app.description }}</p>
+        <p>申请状态:{{ app.get_status_text() }}</p>
+
+        {% if category == 'reviewing' %}
+            <a href="{{ url_for('.handle_club',
+              category='accept',
+              app_id=app.id) }}"
+               class="btn btn-success">接受申请</a>
+            <a href="{{ url_for('.handle_club',
+              category='reject',
+              app_id=app.id) }}"
+               class="btn btn-danger">拒绝申请</a>
+        {% endif %}
+        <p></p>
+        </div>
+    {% endfor %}
+</ul>

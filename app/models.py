@@ -402,6 +402,7 @@ class AttendStatus(enum.Enum):
     reviewing = 1
     accepted = 2
     rejected = 3
+    attended = 4
 
 
 class Attend(db.Model):
@@ -421,7 +422,8 @@ class Attend(db.Model):
         status_text = {
             AttendStatus.reviewing: '审核中',
             AttendStatus.accepted: '已接受',
-            AttendStatus.rejected: '已拒绝'
+            AttendStatus.rejected: '已拒绝',
+            AttendStatus.attended: '已经答到',
         }
         return status_text.get(self.status)
 
@@ -430,7 +432,8 @@ class ActivityStatus(enum.Enum):
     reviewing = 1
     accepted = 2
     rejected = 3
-    finished = 4
+    rollcall = 4
+    finished = 5
 
 
 class Activity(db.Model):
@@ -438,6 +441,7 @@ class Activity(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), index=True)
     description = db.Column(db.Text())
+    conclusion = db.Column(db.Text())
 
     status = db.Column(db.Enum(ActivityStatus),
                        default=ActivityStatus.reviewing)
@@ -447,6 +451,16 @@ class Activity(db.Model):
 
     def get_absolute_url(self):
         return url_for('.activity_detail', activity_id=self.id)
+    
+    def get_status_text(self):
+        status_text = {
+            ActivityStatus.reviewing: '审核中',
+            ActivityStatus.accepted: '已接受',
+            ActivityStatus.rejected: '已拒绝',
+            ActivityStatus.finished: '已结束',
+        }
+        return status_text.get(self.status)
+
 
 
 

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+{% import "_macros.html" as macros %}
+
+{% block title %}社团创建审核{% endblock %}
+
+{% block page_content %}
+  <h1>社团列表</h1>
+  <div class="post-tabs">
+    <ul class="nav nav-tabs">
+      <li{% if category == 'reviewing' %} class="active"{% endif %}>
+        <a href="{{ url_for('.club_create_admin', category='reviewing') }}">等待审核</a>
+      </li>
+      <li{% if category == 'reviewed' %} class="active"{% endif %}>
+        <a href="{{ url_for('.club_create_admin', category='reviewed') }}">已经审核</a>
+        </li>
+    </ul>
+    {% include 'club/_application_management_admin.html' %}
+    {% if pagination %}
+      <div class="pagination">
+        {{ macros.pagination_widget(pagination, '.club_create_admin', category=category) }}
+      </div>
+    {% endif %}
+  </div>
+
+{% endblock %}
