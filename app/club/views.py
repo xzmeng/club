@@ -4,12 +4,13 @@ from flask_login import login_required, current_user
 from sqlalchemy import or_, and_
 
 from app.decorators import club_manager_required
+from app.main.forms import PostForm
 from . import club
 from .forms import ApplyForm, ClubCreateForm, AttendForm, ClubEditForm, ActivityForm, FinishActivityForm
 
 from .. import db
 from ..models import User, Club, Activity, ApplicationStatus, JoinApplication, \
-    CreateApplication, Attend, AttendStatus, ActivityStatus, Post
+    CreateApplication, Attend, AttendStatus, ActivityStatus, Post, Permission
 
 
 @club.route('/clubs')
@@ -32,13 +33,25 @@ def clubs():
                            pagination=pagination)
 
 
-@club.route('/club/<int:club_id>/<string:category>')
+@club.route('/club/<int:club_id>/<string:category>', methods=['POST', 'GET'])
 def club_detail(club_id, category):
     choices = ['ongoing', 'finished', 'reviewing', 'rejected']
     if category not in choices:
         abort(404)
-
     club = Club.query.get_or_404(club_id)
+    form = PostForm()
+    if current_user.can(Permission.WRITE) and form.validate_on_submit():
+        post = Post(body=form.body.data,
+                    author=current_user._get_current_object())
+        post.club = club
+        db.session.add(post)
+        db.session.commit()
+        flash('社团留言发表成功！')
+        return redirect(url_for('.club_detail',
+                                club_id=club_id,
+                                category=category))
+
+
     management = False
     if club.chief == current_user:
         management = True
@@ -55,7 +68,7 @@ def club_detail(club_id, category):
         activities = Activity.query.filter_by(club_id=club_id). \
             filter_by(status=ActivityStatus.finished)
     page = request.args.get('page', 1, type=int)
-    query = Post.query
+    query = club.posts
     pagination = query.order_by(Post.timestamp.desc()).paginate(
         page, per_page=current_app.config['FLASKY_POSTS_PER_PAGE'],
         error_out=False)
@@ -67,6 +80,7 @@ def club_detail(club_id, category):
                            category=category,
                            posts=posts,
                            pagination=pagination,
+                           form=form
                            )
 
 

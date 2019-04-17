@@ -288,6 +288,8 @@ class Post(db.Model):
     timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     comments = db.relationship('Comment', backref='post', lazy='dynamic')
+    club_id = db.Column(db.Integer, db.ForeignKey('clubs.id'), nullable=True)
+    club = db.relationship('Club', backref=backref('posts', lazy='dynamic'), lazy='select')
 
     @staticmethod
     def on_changed_body(target, value, oldvalue, initiator):
