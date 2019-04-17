@@ -25,9 +25,19 @@ def users(count=20):
                  location='Zhengzhou',
                  about_me=fake.text(),
                  member_since=fake.past_date())
+    chairman = User(email='chairman@test.com',
+                    username='chairman',
+                    password='chairman',
+                    confirmed=True,
+                    name='吴主席',
+                    location='zzz',
+                    about_me=fake.text(),
+                    is_chairman=True,
+                    member_since=fake.past_date())
 
     db.session.add(student)
     db.session.add(chief)
+    db.session.add(chairman)
     db.session.commit()
     while i < count:
         u = User(email=fake.email(),

@@ -184,6 +184,9 @@ def apply_to_create():
     if form.validate_on_submit():
         application = CreateApplication()
         application.club_name = form.name.data
+        if CreateApplication.query.filter_by(club_name=form.name.data):
+            flash('已经有该名字的申请！')
+            return redirect(url_for('.apply_to_create'))
         application.description = form.description.data
         application.user = current_user
         db.session.add(application)
@@ -407,6 +410,36 @@ def rollcall(activity_id):
                             activity_id=activity_id))
 
 
+@club.route('/<int:activity_id>/roll_call', methods=['POST', 'GET'])
+@login_required
+def rollcall_chief(activity_id):
+    activity = Activity.query.get_or_404(activity_id)
+    if current_user != activity.club.chief:
+        abort(403)
+
+    attends = Attend.query.filter(
+        or_(Attend.status == AttendStatus.accepted,
+            Attend.status == AttendStatus.attended)
+    )
+    if request.method == 'POST':
+        print('post')
+        for attend in attends:
+            if request.form.get(str(attend.id)):
+                attend.status = AttendStatus.attended
+            else:
+                attend.status = AttendStatus.accepted
+            db.session.add(attend)
+        db.session.commit()
+        flash('点名结果已经保存！')
+        return redirect(url_for('.rollcall_chief',
+                                activity_id=activity_id))
+
+    return render_template('club/rollcall_chief.html',
+                           attends=attends,
+                           AttendStatus=AttendStatus,
+                           activity=activity)
+
+
 @club.route('/club_create_admin/<string:category>')
 @login_required
 def club_create_admin(category):
@@ -544,6 +577,9 @@ def about():
 
 @club.route('/admin')
 def admin():
+    if not current_user.is_chairman:
+        flash('只有主席才能访问！')
+        abort(403)
     return render_template('club/admin.html')
 
 

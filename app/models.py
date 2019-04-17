@@ -24,7 +24,7 @@ class Permission:
 
 class Role(db.Model):
     __tablename__ = 'roles'
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String(64), unique=True)
     default = db.Column(db.Boolean, default=False, index=True)
     permissions = db.Column(db.Integer)
@@ -86,7 +86,7 @@ class Follow(db.Model):
 
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     email = db.Column(db.String(64), unique=True, index=True)
     username = db.Column(db.String(64), unique=True, index=True)
     role_id = db.Column(db.Integer, db.ForeignKey('roles.id'))
@@ -99,6 +99,7 @@ class User(UserMixin, db.Model):
     last_seen = db.Column(db.DateTime(), default=datetime.utcnow)
     avatar_hash = db.Column(db.String(32))
     posts = db.relationship('Post', backref='author', lazy='dynamic')
+    is_chairman = db.Column(db.Boolean, default=False)
 
     followed = db.relationship('Follow',
                                foreign_keys=[Follow.follower_id],
@@ -281,7 +282,7 @@ def load_user(user_id):
 
 class Post(db.Model):
     __tablename__ = 'posts'
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     body = db.Column(db.Text)
     body_html = db.Column(db.Text)
     timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
@@ -303,7 +304,7 @@ db.event.listen(Post.body, 'set', Post.on_changed_body)
 
 class Comment(db.Model):
     __tablename__ = 'comments'
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     body = db.Column(db.Text)
     body_html = db.Column(db.Text)
     timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
@@ -333,7 +334,7 @@ joins = db.Table(
 
 class Club(db.Model):
     __tablename__ = 'clubs'
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String(64), unique=True, index=True)
     description = db.Column(db.Text())
 
@@ -358,7 +359,7 @@ class ApplicationStatus(enum.Enum):
 
 class JoinApplication(db.Model):
     __tablename__ = 'join_applications'
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     club_id = db.Column(db.Integer, db.ForeignKey('clubs.id'))
     description = db.Column(db.Text())
@@ -380,7 +381,7 @@ class JoinApplication(db.Model):
 
 class CreateApplication(db.Model):
     __tablename__ = 'create_applications'
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     club_name = db.Column(db.String(64))
     description = db.Column(db.Text())
@@ -407,7 +408,7 @@ class AttendStatus(enum.Enum):
 
 class Attend(db.Model):
     __tablename__ = 'attends'
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     activity_id = db.Column(db.Integer, db.ForeignKey('activities.id'))
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
@@ -438,7 +439,7 @@ class ActivityStatus(enum.Enum):
 
 class Activity(db.Model):
     __tablename__ = 'activities'
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String(64), index=True)
     description = db.Column(db.Text())
     conclusion = db.Column(db.Text())

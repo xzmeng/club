@@ -8,11 +8,13 @@
     <a href="{{ url_for('.activity_detail', activity_id=activity.id) }}">返回活动页面</a>
     <h1>申请列表</h1>
     {% if not rollcall %}
+        <a href="{{ url_for('.rollcall_chief', activity_id=activity.id) }}"
+        class="btn btn-primary">点名</a>
         <a href="{{ url_for('.start_rollcall', activity_id=activity.id) }}"
-           class="btn btn-primary">开始点名</a>
+           class="btn btn-primary">开始点名(废弃)</a>
     {% else %}
         <a href=""
-           class="btn btn-default">已经开始点名</a>
+           class="btn btn-default">已经开始点名(废弃)</a>
     {% endif %}
     <div class="post-tabs">
         <ul class="nav nav-tabs">

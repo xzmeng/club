@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+{% import "_macros.html" as macros %}
+
+{% block title %}点名{% endblock %}
+
+{% block page_content %}
+    <h1>参加者名单</h1>
+    <form action="{{ url_for('.rollcall_chief', activity_id=activity.id) }}"
+        method="post">
+    {% for attend in attends %}
+        <input type="checkbox"
+               name="{{ attend.id }}"
+                {% if attend.status == AttendStatus.attended %}
+               checked
+                {% endif %}
+        >{{ attend.user.name }}<br>
+    {% endfor %}
+        <input type="submit" value="提交"
+        class="btn btn-primary">
+    </form>
+
+
+{% endblock %}
