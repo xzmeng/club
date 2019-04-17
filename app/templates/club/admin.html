@@ -4,17 +4,18 @@
 {% block title %}管理{% endblock %}
 
 {% block page_content %}
-<div class="page-header">
-    <h1>管理</h1>
-    <a href="{{ url_for('.activity_management_admin', category='reviewing') }}" class="btn btn-primary">活动审核</a>
-    <a href="{{ url_for('.club_create_admin', category='reviewing') }}" class="btn btn-primary">社团创建审核</a>
-    <a href="{{ url_for('.admin_info') }}" class="btn btn-primary">统计信息</a>
-</div>
-<div>
-</div>
+    <div class="page-header">
+        <h1>管理</h1>
+        <a href="{{ url_for('.activity_management_admin', category='reviewing') }}" class="btn btn-primary">活动审核</a>
+        <a href="{{ url_for('.club_create_admin', category='reviewing') }}" class="btn btn-primary">社团创建审核</a>
+        <a href="{{ url_for('.admin_info') }}" class="btn btn-primary">统计信息</a>
+        <a href="/admin/" class="btn btn-primary">管理后台</a>
+    </div>
+    <div>
+    </div>
 {% endblock %}
 
 {% block scripts %}
-{{ super() }}
-{{ pagedown.include_pagedown() }}
+    {{ super() }}
+    {{ pagedown.include_pagedown() }}
 {% endblock %}

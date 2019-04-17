@@ -28,7 +28,7 @@
             <li><a href="{{ url_for('main.user', username=current_user.username) }}">个人信息</a></li>
             <li><a href="{{ url_for('club.clubs') }}">社团</a></li>
             <li><a href="{{ url_for('club.activities', category='ongoing') }}">活动</a></li>
-              {% if request.user.is_chairman %}
+              {% if current_user.is_chairman %}
             <li><a href="{{ url_for('club.admin') }}">管理</a></li>
                   {% endif %}
 

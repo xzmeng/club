@@ -5,13 +5,19 @@ from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_pagedown import PageDown
+import flask_admin as admin
+from flask_admin.contrib import sqla
 from config import config
+
 
 bootstrap = Bootstrap()
 mail = Mail()
 moment = Moment()
 db = SQLAlchemy()
 pagedown = PageDown()
+
+# management
+
 
 login_manager = LoginManager()
 login_manager.login_view = 'auth.login'
@@ -37,5 +43,6 @@ def create_app(config_name):
 
     from .club import club as club_blueprint
     app.register_blueprint(club_blueprint, url_prefix='/club')
+
 
     return app
