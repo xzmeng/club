@@ -198,7 +198,7 @@ def apply_to_create():
     if form.validate_on_submit():
         application = CreateApplication()
         application.club_name = form.name.data
-        if CreateApplication.query.filter_by(club_name=form.name.data):
+        if CreateApplication.query.filter_by(club_name=form.name.data).first():
             flash('已经有该名字的申请！')
             return redirect(url_for('.apply_to_create'))
         application.description = form.description.data
